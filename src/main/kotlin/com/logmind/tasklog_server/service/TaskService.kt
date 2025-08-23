@@ -1,9 +1,10 @@
-package com.logmind.todolog_server.service
+package com.logmind.tasklog_server.service
 
-import com.logmind.todolog_server.dto.request.AddTaskRequest
-import com.logmind.todolog_server.dto.request.UpdateTaskRequest
-import com.logmind.todolog_server.entity.Task
-import com.logmind.todolog_server.repository.TaskRepository
+import com.logmind.tasklog_server.dto.request.AddTaskRequest
+import com.logmind.tasklog_server.dto.request.UpdateTaskRequest
+import com.logmind.tasklog_server.dto.request.UpdateTaskStatusRequest
+import com.logmind.tasklog_server.entity.Task
+import com.logmind.tasklog_server.repository.TaskRepository
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
@@ -82,8 +83,8 @@ class TaskService(
                     description = req.description,
                     isCompleted = req.isCompleted
                 )
-                val updatedTask = taskRepository.save(updatedTodo)
-                Result.success(updatedTask)
+                val result = taskRepository.save(updatedTodo)
+                Result.success(result)
             } else {
                 Result.failure(TaskNotFoundException(req.id))
             }
@@ -96,4 +97,24 @@ class TaskService(
         }
     }
 
+    fun updateStatus(req: UpdateTaskStatusRequest): Result<Unit> {
+        return try {
+            val task = taskRepository.findTaskById(req.id)
+            if (task != null) {
+                val updatedTodo = task.copy(
+                    isCompleted = req.isCompleted
+                )
+                taskRepository.save(updatedTodo)
+                Result.success(Unit)
+            } else {
+                Result.failure(TaskNotFoundException(req.id))
+            }
+        } catch (e: DataAccessException) {
+            logger.error("Database error while updating task with id: ${req.id}", e)
+            Result.failure(TaskServiceException("Failed to update task", e))
+        } catch (e: Exception) {
+            logger.error("Unexpected error while updating task with id: ${req.id}", e)
+            Result.failure(e)
+        }
+    }
 }

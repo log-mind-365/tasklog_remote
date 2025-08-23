@@ -1,11 +1,11 @@
-package com.logmind.todolog_server
+package com.logmind.tasklog_server
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class TodologServerApplication
+class TasklogServerApplication
 
 fun main(args: Array<String>) {
-    runApplication<TodologServerApplication>(*args)
+    runApplication<TasklogServerApplication>(*args)
 }

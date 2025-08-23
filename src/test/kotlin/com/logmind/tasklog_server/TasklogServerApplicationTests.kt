@@ -1,10 +1,10 @@
-package com.logmind.todolog_server
+package com.logmind.tasklog_server
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class TodologServerApplicationTests {
+class TasklogServerApplicationTests {
 
     @Test
     fun contextLoads() {

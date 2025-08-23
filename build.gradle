@@ -8,7 +8,7 @@ plugins {
 
 group = 'com.logmind'
 version = '0.0.1-SNAPSHOT'
-description = 'todolog_server'
+description = 'tasklog_server'
 
 java {
     toolchain {

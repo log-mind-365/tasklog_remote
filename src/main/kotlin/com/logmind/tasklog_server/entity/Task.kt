@@ -1,4 +1,4 @@
-package com.logmind.todolog_server.entity
+package com.logmind.tasklog_server.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

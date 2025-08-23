@@ -1,9 +1,7 @@
-package com.logmind.todolog_server.repository
+package com.logmind.tasklog_server.repository
 
-import com.logmind.todolog_server.entity.Task
+import com.logmind.tasklog_server.entity.Task
 import org.springframework.data.jpa.repository.JpaRepository
-import java.util.Optional
-import java.util.UUID
 
 interface TaskRepository : JpaRepository<Task, Long> {
     fun deleteTaskById(id: Long)

@@ -1,4 +1,4 @@
-package com.logmind.todolog_server.config
+package com.logmind.tasklog_server.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

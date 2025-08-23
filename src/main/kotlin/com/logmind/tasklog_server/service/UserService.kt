@@ -1,7 +1,7 @@
-package com.logmind.todolog_server.service
+package com.logmind.tasklog_server.service
 
-import com.logmind.todolog_server.entity.User
-import com.logmind.todolog_server.repository.UserRepository
+import com.logmind.tasklog_server.entity.User
+import com.logmind.tasklog_server.repository.UserRepository
 import org.springframework.stereotype.Service
 
 @Service
