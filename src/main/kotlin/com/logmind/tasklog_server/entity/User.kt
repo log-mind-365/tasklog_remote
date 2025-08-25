@@ -1,16 +1,10 @@
 package com.logmind.tasklog_server.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import java.time.Instant
 
@@ -25,33 +19,40 @@ data class User(
     val email: String,
 
     @Column(nullable = false)
-    val name: String,
-
-    @Enumerated(EnumType.STRING)
-    @Column
-    val role: UserRole = UserRole.USER,
-
-    @Column(nullable = false)
     private val password: String,
+
+    @Column(length = 10)
+    private val username: String? = "",
 
     @CreationTimestamp
     @Column(updatable = false)
-    val createdAt: Instant,
+    val createdAt: Instant? = null,
 
     @UpdateTimestamp
     @Column
     val updatedAt: Instant? = null,
-
-    ) : UserDetails {
-    override fun getAuthorities(): Collection<GrantedAuthority?>? {
-        TODO("Not yet implemented")
+) : UserDetails {
+    override fun getAuthorities(): Collection<GrantedAuthority> {
+        return listOf(SimpleGrantedAuthority("user"))
     }
 
-    override fun getPassword(): String {
-        TODO("Not yet implemented")
+    override fun getPassword(): String = password
+
+    override fun getUsername(): String? = username
+
+    override fun isAccountNonExpired(): Boolean {
+        return super.isAccountNonExpired()
     }
 
-    override fun getUsername(): String {
-        TODO("Not yet implemented")
+    override fun isAccountNonLocked(): Boolean {
+        return super.isAccountNonLocked()
+    }
+
+    override fun isCredentialsNonExpired(): Boolean {
+        return super.isCredentialsNonExpired()
+    }
+
+    override fun isEnabled(): Boolean {
+        return super.isEnabled()
     }
 }
