@@ -1,10 +1,9 @@
-package com.logmind.tasklog_server.util
+package com.logmind.tasklog_server.security.jwt
 
 import io.jsonwebtoken.*
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
@@ -12,24 +11,32 @@ import java.security.Key
 import java.util.*
 
 @Component
-class JwtTokenProvider {
-    @Value("\${jwt.secret}")
-    private lateinit var jwtSecret: String
-
-    @Value("\${jwt.expiration}")
-    private var jwtExpirationMs: Int = 86400000
-
+class JwtTokenProvider(private val jwtProperties: JwtProperties) {
     private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
-    fun generateToken(authentication: Authentication): String {
+    fun generateAccessToken(authentication: Authentication): String {
         val userPrincipal = authentication.principal as UserDetails
-        val expiryDate = Date(Date().time + jwtExpirationMs)
+        val expiryDate = Date(Date().time + jwtProperties.accessTokenExpiration)
 
         return Jwts.builder()
             .setSubject(userPrincipal.username)
             .setIssuedAt(Date())
             .setExpiration(expiryDate)
-            .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+            .setIssuer(jwtProperties.issuer)
+            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+            .compact()
+    }
+
+    fun generateRefreshToken(authentication: Authentication): String {
+        val userPrincipal = authentication.principal as UserDetails
+        val expiryDate = Date(Date().time + jwtProperties.refreshTokenExpiration)
+
+        return Jwts.builder()
+            .setSubject(userPrincipal.username)
+            .setIssuedAt(Date())
+            .setExpiration(expiryDate)
+            .setIssuer(jwtProperties.issuer)
+            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
             .compact()
     }
 
@@ -64,7 +71,7 @@ class JwtTokenProvider {
     }
 
     private fun getSigningKey(): Key {
-        val keyBytes = Decoders.BASE64.decode(jwtSecret)
+        val keyBytes = Decoders.BASE64.decode(jwtProperties.secret)
         return Keys.hmacShaKeyFor(keyBytes)
     }
 }

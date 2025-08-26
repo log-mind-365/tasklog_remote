@@ -1,7 +1,7 @@
 package com.logmind.tasklog_server.config
 
-import com.logmind.tasklog_server.service.UserService
-import com.logmind.tasklog_server.util.JwtAuthenticationFilter
+import com.logmind.tasklog_server.security.jwt.JwtAuthenticationFilter
+import com.logmind.tasklog_server.service.CustomUserDetailsService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -20,7 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val userService: UserService,
+    private val userService: CustomUserDetailsService,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
 ) {
 
@@ -49,12 +49,12 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
+            .securityMatcher("/api/**")
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
-                        "/login",
-                        "/signup",
-                        "/user"
+                        "/api/auth/login",
+                        "/api/auth/join",
                     )
                     .permitAll()
                     .anyRequest()
@@ -63,17 +63,11 @@ class SecurityConfig(
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
-            .formLogin { formLogin ->
-                formLogin
-                    .loginPage("/login")
-                    .defaultSuccessUrl("/home", true)
-
-            }
-            .logout { logout ->
-                logout.logoutSuccessUrl("/login")
-                    .invalidateHttpSession(true)
-            }
+            .formLogin { it.disable() }
+            .logout { it.disable() }
             .csrf { it.disable() }
+            .cors { it.configurationSource(corsConfigurationSource()) }
+            .authenticationProvider(authenticationProvider())
         http.addFilterBefore(
             jwtAuthenticationFilter,
             UsernamePasswordAuthenticationFilter::class.java
@@ -82,6 +76,11 @@ class SecurityConfig(
     }
 
     @Bean
-    fun authenticationProvider(): DaoAuthenticationProvider =
-        DaoAuthenticationProvider(userService)
+    fun authenticationProvider(): DaoAuthenticationProvider {
+        val provider = DaoAuthenticationProvider()
+        provider.setUserDetailsService(userService)
+        provider.setPasswordEncoder(bCryptPasswordEncoder())
+        return provider
+    }
+
 }

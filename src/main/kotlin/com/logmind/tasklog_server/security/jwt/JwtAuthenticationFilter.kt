@@ -1,4 +1,4 @@
-package com.logmind.tasklog_server.util
+package com.logmind.tasklog_server.security.jwt
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -15,7 +15,7 @@ class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
     private val userDetailsService: UserDetailsService
 ) : OncePerRequestFilter() {
-    private val logger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
+    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     override fun doFilterInternal(
         request: HttpServletRequest,

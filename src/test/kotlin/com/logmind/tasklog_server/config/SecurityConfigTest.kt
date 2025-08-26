@@ -1,9 +1,8 @@
 package com.logmind.tasklog_server.config
 
-import com.logmind.tasklog_server.service.UserService
-import com.logmind.tasklog_server.util.JwtAuthenticationFilter
+import com.logmind.tasklog_server.security.jwt.JwtAuthenticationFilter
+import com.logmind.tasklog_server.service.CustomUserDetailsService
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.Mockito.mock
@@ -21,14 +20,13 @@ class SecurityConfigTest {
     private lateinit var securityConfig: SecurityConfig
 
     @MockitoBean
-    private lateinit var userService: UserService
+    private lateinit var userService: CustomUserDetailsService
 
     @MockitoBean
     private lateinit var jwtAuthenticationFilter: JwtAuthenticationFilter
 
     @Test
-    @DisplayName("BCryptPasswordEncoder Bean이 올바르게 생성되어야 한다.")
-    fun testBCryptPasswordEncoderBeanCreation() {
+    fun `BCryptPasswordEncoder Bean이 올바르게 생성되어야 한다`() {
         val encoder = securityConfig.bCryptPasswordEncoder()
 
         assertNotNull(encoder)
@@ -42,8 +40,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    @DisplayName("AuthenticationManager Bean이 올바르게 생성되어야 한다.")
-    fun testAuthenticationManagerBeanCreation() {
+    fun `AuthenticationManager Bean이 올바르게 생성되어야 한다`() {
         val authConfig = mock(AuthenticationConfiguration::class.java)
         val authManager = mock(AuthenticationManager::class.java)
 
