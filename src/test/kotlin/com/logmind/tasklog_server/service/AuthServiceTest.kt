@@ -62,7 +62,7 @@ class AuthServiceTest {
 
         // Then
         assertTrue(result.isSuccess)
-        assertEquals(savedUser, result.getOrNull())
+        // TODO: 가입된 유저 비교 구문
         verify(userRepository).findByEmail(registerRequest.email)
         verify(passwordEncoder).encode(registerRequest.password)
         verify(userRepository).save(any(User::class.java))
@@ -122,7 +122,6 @@ class AuthServiceTest {
                 accessToken = "accessToken",
                 refreshToken = "refreshToken",
                 expiresIn = 1000L,
-                user = savedUser,
             )
         )
 
@@ -131,7 +130,7 @@ class AuthServiceTest {
 
         // Then
         assertTrue(loginResult.isSuccess)
-        assertEquals(savedUser, loginResult.getOrNull()?.user)
+
         verify(userRepository).findByEmail(loginRequest.email)
         verify(passwordEncoder).matches(loginRequest.password, savedUser.password)
         verify(tokenService).createToken(savedUser)

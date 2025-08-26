@@ -20,7 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val userService: CustomUserDetailsService,
+    private val userDetailsService: CustomUserDetailsService,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
 ) {
 
@@ -78,7 +78,7 @@ class SecurityConfig(
     @Bean
     fun authenticationProvider(): DaoAuthenticationProvider {
         val provider = DaoAuthenticationProvider()
-        provider.setUserDetailsService(userService)
+        provider.setUserDetailsService(userDetailsService)
         provider.setPasswordEncoder(bCryptPasswordEncoder())
         return provider
     }

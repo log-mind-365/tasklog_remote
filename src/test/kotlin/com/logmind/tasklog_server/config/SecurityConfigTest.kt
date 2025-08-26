@@ -1,7 +1,6 @@
 package com.logmind.tasklog_server.config
 
 import com.logmind.tasklog_server.security.jwt.JwtAuthenticationFilter
-import com.logmind.tasklog_server.service.CustomUserDetailsService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
@@ -10,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
+import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 
@@ -20,7 +20,7 @@ class SecurityConfigTest {
     private lateinit var securityConfig: SecurityConfig
 
     @MockitoBean
-    private lateinit var userService: CustomUserDetailsService
+    private lateinit var userService: UserDetailsService
 
     @MockitoBean
     private lateinit var jwtAuthenticationFilter: JwtAuthenticationFilter
