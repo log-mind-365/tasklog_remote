@@ -16,13 +16,19 @@ data class User(
     val id: Long? = null,
 
     @Column(unique = true, nullable = false)
-    val email: String,
+    private val username: String,
 
     @Column(nullable = false)
     private val password: String,
 
+    @Column(unique = true, nullable = false)
+    val email: String,
+
     @Column(length = 10)
-    private val username: String? = "",
+    val displayName: String? = null,
+
+    @Column
+    val profileImage: String? = null,
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -38,7 +44,7 @@ data class User(
 
     override fun getPassword(): String = password
 
-    override fun getUsername(): String? = username
+    override fun getUsername(): String = username
 
     override fun isAccountNonExpired(): Boolean {
         return super.isAccountNonExpired()
@@ -55,4 +61,24 @@ data class User(
     override fun isEnabled(): Boolean {
         return super.isEnabled()
     }
+}
+
+data class LoginUserInfo(
+    val id: Long,
+    val email: String,
+    val displayName: String?,
+    val profileImage: String?,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+)
+
+fun User.toLoginUserInfo(): LoginUserInfo {
+    return LoginUserInfo(
+        id = requireNotNull(this.id) { "id must not be null" },
+        email = this.email,
+        displayName = this.displayName,
+        profileImage = this.profileImage,
+        createdAt = requireNotNull(this.createdAt) { "createdAt must not be null" },
+        updatedAt = requireNotNull(this.updatedAt) { "updatedAt must not be null" },
+    )
 }

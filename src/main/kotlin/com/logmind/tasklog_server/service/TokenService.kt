@@ -2,6 +2,7 @@ package com.logmind.tasklog_server.service
 
 import com.logmind.tasklog_server.dto.response.AuthResponse
 import com.logmind.tasklog_server.entity.User
+import com.logmind.tasklog_server.entity.toLoginUserInfo
 import com.logmind.tasklog_server.security.jwt.JwtProperties
 import com.logmind.tasklog_server.security.jwt.JwtTokenProvider
 import org.slf4j.LoggerFactory
@@ -29,6 +30,7 @@ class TokenService(
             refreshToken = refreshToken,
             tokenType = "Bearer",
             expiresIn = jwtProperties.accessTokenExpiration,
+            data = user.toLoginUserInfo(),
         )
     }
 

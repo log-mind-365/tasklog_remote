@@ -10,13 +10,14 @@ import com.logmind.tasklog_server.exception.InvalidCredentialsException
 import com.logmind.tasklog_server.repository.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.slf4j.LoggerFactory
-import org.springframework.dao.DataAccessException
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AuthService(
@@ -25,60 +26,54 @@ class AuthService(
     private val tokenService: TokenService,
     private val authenticationManager: AuthenticationManager
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
-
-    fun register(addUserRequest: RegisterRequest): Result<AuthResponse> {
-        return try {
-            if (userRepository.findByEmail(addUserRequest.email) != null) {
-                return Result.failure(AlreadyEmailRegisteredException())
+    @Transactional
+    fun register(addUserRequest: RegisterRequest): AuthResponse {
+        return runCatching {
+            userRepository.findByEmail(addUserRequest.email)?.let {
+                throw AlreadyEmailRegisteredException()
             }
             val user = User(
                 email = addUserRequest.email,
                 password = passwordEncoder.encode(addUserRequest.password),
-                username = addUserRequest.username,
+                username = addUserRequest.email
             )
             val savedUser = userRepository.save(user)
-            val authResponse = tokenService.createToken(savedUser)
-            Result.success(authResponse)
-        } catch (e: DataAccessException) {
-            Result.failure(AuthServiceException("Database error while register", e))
-        } catch (e: Exception) {
-            Result.failure(AuthServiceException("Failed to register", e))
-        }
-    }
 
-    fun login(loginRequest: LoginRequest): Result<AuthResponse> {
-        return try {
-            val user = userRepository.findByEmail(loginRequest.email)
-                ?: return Result.failure(InvalidCredentialsException())
-
-            if (!passwordEncoder.matches(loginRequest.password, user.password)) {
-                return Result.failure(Exception(InvalidCredentialsException()))
+            tokenService.createToken(savedUser)
+        }.getOrElse {
+            when (it) {
+                is AlreadyEmailRegisteredException -> throw it
+                else -> throw AuthServiceException("Register failed", it)
             }
-            val authResponse = tokenService.createToken(user)
-            Result.success(authResponse)
-        } catch (e: DataAccessException) {
-            Result.failure(AuthServiceException("Database error while login", e))
-        } catch (e: Exception) {
-            Result.failure(AuthServiceException("Failed to login", e))
         }
     }
 
-    fun logout(request: HttpServletRequest, response: HttpServletResponse): Result<Unit> {
-        return try {
+    fun login(loginRequest: LoginRequest): AuthResponse {
+        return runCatching {
+            val authToken = UsernamePasswordAuthenticationToken(
+                loginRequest.email, loginRequest.password
+            )
+            val authentication = authenticationManager.authenticate(
+                authToken
+            )
+            val user = authentication.principal as User
+
+            tokenService.createToken(user)
+        }.getOrElse {
+            when (it) {
+                is BadCredentialsException -> throw InvalidCredentialsException()
+                else -> throw AuthServiceException("Login failed", it)
+            }
+        }
+
+    }
+
+    fun logout(request: HttpServletRequest, response: HttpServletResponse) {
+        return runCatching {
             val authentication = SecurityContextHolder.getContext().authentication
-            if (authentication != null) {
-                SecurityContextLogoutHandler().logout(request, response, authentication)
-                logger.info("User logged out successfully")
-            } else {
-                logger.warn("No authentication found during logout")
-            }
-            Result.success(Unit)
-        } catch (e: DataAccessException) {
-            Result.failure(Exception("Database error while logout", e))
-        } catch (e: Exception) {
-            Result.failure(Exception("Logout failed", e))
+            SecurityContextLogoutHandler().logout(request, response, authentication)
+        }.getOrElse {
+            throw AuthServiceException("Logout failed", it)
         }
     }
-
 }

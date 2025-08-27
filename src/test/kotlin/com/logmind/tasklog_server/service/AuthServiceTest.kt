@@ -122,6 +122,7 @@ class AuthServiceTest {
                 accessToken = "accessToken",
                 refreshToken = "refreshToken",
                 expiresIn = 1000L,
+                data = savedUser
             )
         )
 

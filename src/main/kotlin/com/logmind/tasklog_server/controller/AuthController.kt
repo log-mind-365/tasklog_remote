@@ -18,16 +18,16 @@ class AuthController(
 ) {
     @PostMapping("/join")
     fun registerUser(@RequestBody registerRequest: RegisterRequest): AuthResponse {
-        return authService.register(registerRequest).getOrThrow()
+        return authService.register(registerRequest)
     }
 
     @PostMapping("/login")
     fun login(@RequestBody loginRequest: LoginRequest): AuthResponse {
-        return authService.login(loginRequest).getOrThrow()
+        return authService.login(loginRequest)
     }
 
     @PostMapping("/logout")
     fun logout(request: HttpServletRequest, response: HttpServletResponse) {
-        authService.logout(request, response).getOrThrow()
+        authService.logout(request, response)
     }
 }
