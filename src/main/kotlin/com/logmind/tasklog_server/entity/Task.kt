@@ -21,6 +21,10 @@ data class Task(
     @Column
     val isCompleted: Boolean = false,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    val user: User,
+
     @CreationTimestamp
     @Column(updatable = false)
     val createdAt: Instant? = null,
