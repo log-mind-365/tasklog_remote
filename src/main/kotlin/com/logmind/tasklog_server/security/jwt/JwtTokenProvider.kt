@@ -11,7 +11,9 @@ import java.security.Key
 import java.util.*
 
 @Component
-class JwtTokenProvider(private val jwtProperties: JwtProperties) {
+class JwtTokenProvider(
+    private val jwtProperties: JwtProperties
+) {
     private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
     fun generateAccessToken(authentication: Authentication): String {
@@ -58,6 +60,7 @@ class JwtTokenProvider(private val jwtProperties: JwtProperties) {
             return true
         } catch (ex: SecurityException) {
             logger.error("Invalid JWT signature")
+            throw SecurityException("Invalid JWT signature")
         } catch (ex: MalformedJwtException) {
             logger.error("Invalid JWT token")
         } catch (ex: ExpiredJwtException) {

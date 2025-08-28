@@ -4,6 +4,5 @@ import com.logmind.tasklog_server.entity.Task
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface TaskRepository : JpaRepository<Task, Long> {
-    fun deleteTaskById(id: Long)
     fun findTaskById(id: Long): Task?
 }

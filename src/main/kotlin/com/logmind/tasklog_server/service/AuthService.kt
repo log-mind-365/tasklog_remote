@@ -28,52 +28,55 @@ class AuthService(
 ) {
     @Transactional
     fun register(addUserRequest: RegisterRequest): AuthResponse {
-        return runCatching {
-            userRepository.findByEmail(addUserRequest.email)?.let {
+        return execute("register") {
+            if (userRepository.existsByEmail(addUserRequest.email)) {
                 throw AlreadyEmailRegisteredException()
             }
+
             val user = User(
                 email = addUserRequest.email,
                 password = passwordEncoder.encode(addUserRequest.password),
                 username = addUserRequest.email
             )
             val savedUser = userRepository.save(user)
-
             tokenService.createToken(savedUser)
-        }.getOrElse {
-            when (it) {
-                is AlreadyEmailRegisteredException -> throw it
-                else -> throw AuthServiceException("Register failed", it)
-            }
         }
     }
 
+    @Transactional(readOnly = true)
     fun login(loginRequest: LoginRequest): AuthResponse {
-        return runCatching {
-            val authToken = UsernamePasswordAuthenticationToken(
-                loginRequest.email, loginRequest.password
-            )
+        val (email, password) = loginRequest
+        return execute("login") {
+            val authToken = UsernamePasswordAuthenticationToken(email, password)
             val authentication = authenticationManager.authenticate(
                 authToken
             )
             val user = authentication.principal as User
-
             tokenService.createToken(user)
-        }.getOrElse {
-            when (it) {
-                is BadCredentialsException -> throw InvalidCredentialsException()
-                else -> throw AuthServiceException("Login failed", it)
-            }
         }
 
     }
 
     fun logout(request: HttpServletRequest, response: HttpServletResponse) {
-        return runCatching {
+        return execute("logout") {
             val authentication = SecurityContextHolder.getContext().authentication
+            if (authentication != null && authentication.principal is User) {
+                val user = authentication.principal as User
+                tokenService.revokeAllUserTokens(user.email)
+            }
             SecurityContextLogoutHandler().logout(request, response, authentication)
+        }
+    }
+
+    private inline fun <T> execute(operation: String, block: () -> T): T {
+        return runCatching {
+            block()
         }.getOrElse {
-            throw AuthServiceException("Logout failed", it)
+            when (it) {
+                is AlreadyEmailRegisteredException -> throw it
+                is BadCredentialsException -> throw InvalidCredentialsException()
+                else -> throw AuthServiceException("Failed execute $operation", it)
+            }
         }
     }
 }

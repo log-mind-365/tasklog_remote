@@ -13,51 +13,76 @@ import org.springframework.stereotype.Service
 @Service
 class TokenService(
     private val jwtTokenProvider: JwtTokenProvider,
-    private val jwtProperties: JwtProperties
+    private val jwtProperties: JwtProperties,
+    private val refreshTokenService: RefreshTokenService,
+    private val userService: UserService
 ) {
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
     fun createToken(user: User): AuthResponse {
-        val authentication = createAuthentication(user)
-
-        val accessToken = jwtTokenProvider.generateAccessToken(authentication)
-        val refreshToken = jwtTokenProvider.generateRefreshToken(authentication)
-
-        logger.info("Tokens issued for user: ${user.email}")
-
-        return AuthResponse(
-            accessToken = accessToken,
-            refreshToken = refreshToken,
-            tokenType = "Bearer",
-            expiresIn = jwtProperties.accessTokenExpiration,
-            data = user.toLoginUserInfo(),
-        )
-    }
-
-    fun refreshToken(refreshToken: String): Result<AuthResponse> {
-        return try {
-            if (!jwtTokenProvider.validateToken(refreshToken)) {
-                return Result.failure(Exception("Invalid refresh token"))
-            }
-
-            val username = jwtTokenProvider.getUsernameFromToken(refreshToken)
-            // 실제 구현에서는 UserService를 통해 사용자를 조회해야 합니다
-            // 여기서는 간단히 처리
-            logger.info("Token refreshed for user: $username")
-
-            // TODO: UserService를 주입받아 실제 User 객체를 조회
-            Result.failure(Exception("Token refresh not fully implemented"))
-        } catch (e: Exception) {
-            logger.error("Token refresh failed", e)
-            Result.failure(Exception("Token refresh failed"))
+        return execute("create token") {
+            val authentication = createAuthentication(user)
+            val accessToken = jwtTokenProvider.generateAccessToken(authentication)
+            val refreshTokenEntity = refreshTokenService.createRefreshToken(user.email)
+            logger.info("Tokens issued for user: ${user.email}")
+            AuthResponse(
+                accessToken = accessToken,
+                refreshToken = refreshTokenEntity.token,
+                tokenType = "Bearer",
+                expiresIn = jwtProperties.accessTokenExpiration,
+                data = user.toLoginUserInfo(),
+            )
         }
     }
 
     private fun createAuthentication(user: User): Authentication {
-        return UsernamePasswordAuthenticationToken(
-            user,
-            null,
-            user.authorities
-        )
+        return execute("create authentication") {
+            UsernamePasswordAuthenticationToken(
+                user,
+                null,
+                user.authorities
+            )
+        }
+    }
+
+    fun refreshAccessToken(refreshToken: String): AuthResponse {
+        return execute("refresh access token") {
+            val refreshTokenEntity = refreshTokenService.validateRefreshToken(refreshToken)
+            val user = userService.getUserByEmail(refreshTokenEntity.userEmail)
+            val authentication = createAuthentication(user)
+            val newAccessToken = jwtTokenProvider.generateAccessToken(authentication)
+
+            logger.info("Access token refreshed for user: ${user.email}")
+            AuthResponse(
+                accessToken = newAccessToken,
+                refreshToken = refreshToken,
+                tokenType = "Bearer",
+                expiresIn = jwtProperties.accessTokenExpiration,
+                data = user.toLoginUserInfo(),
+            )
+        }
+    }
+
+    fun revokeRefreshToken(refreshToken: String) {
+        execute("revoke refresh token") {
+            refreshTokenService.revokeToken(refreshToken)
+            logger.info("Refresh token revoked")
+        }
+    }
+
+    fun revokeAllUserTokens(userEmail: String) {
+        execute("revoke all user tokens") {
+            refreshTokenService.revokeAllUserTokens(userEmail)
+            logger.info("All refresh tokens revoked for user: $userEmail")
+        }
+    }
+
+    private inline fun <T> execute(operation: String, block: () -> T): T {
+        return runCatching {
+            block()
+        }.getOrElse {
+            logger.error("Failed execute $operation - ${it.message}")
+            throw Exception("Failed execute $operation", it)
+        }
     }
 }

@@ -2,136 +2,71 @@ package com.logmind.tasklog_server.service
 
 import com.logmind.tasklog_server.dto.request.AddTaskRequest
 import com.logmind.tasklog_server.dto.request.UpdateTaskRequest
-import com.logmind.tasklog_server.dto.request.UpdateTaskStatusRequest
 import com.logmind.tasklog_server.entity.Task
 import com.logmind.tasklog_server.exception.TaskNotFoundException
 import com.logmind.tasklog_server.exception.TaskServiceException
 import com.logmind.tasklog_server.repository.TaskRepository
 import org.slf4j.LoggerFactory
-import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
-class TaskService(
-    val taskRepository: TaskRepository
-) {
-    private val logger = LoggerFactory.getLogger(TaskService::class.java)
-    fun save(req: AddTaskRequest): Result<Task> {
-        val newTask = Task(title = req.title, description = req.description)
-        return try {
-            val task = taskRepository.save(newTask)
-            Result.success(task)
-        } catch (e: DataAccessException) {
-            Result.failure(TaskServiceException("Database error while saving task", e))
-        } catch (e: Exception) {
-            Result.failure(TaskServiceException("Unexpected error while saving task", e))
+class TaskService(private val taskRepository: TaskRepository) {
+    private val logger = LoggerFactory.getLogger(this.javaClass)
+
+    fun save(req: AddTaskRequest): Task {
+        return execute("save task") {
+            val newTask = Task(title = req.title, description = req.description)
+            taskRepository.save(newTask)
         }
     }
 
-    fun delete(id: Long): Result<Boolean> {
-        return try {
-            taskRepository.deleteTaskById(id)
-            Result.success(true)
-        } catch (e: DataAccessException) {
-            Result.failure(
-                TaskServiceException(
-                    "Database error while deleting task with id: $id", e
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(
-                TaskServiceException(
-                    "Unexpected error while deleting task with id: $id", e
-                )
-            )
-        }
-    }
-
-    fun findAll(): Result<List<Task>> {
-        return try {
-            val tasks = taskRepository.findAll()
-            Result.success(tasks)
-        } catch (e: DataAccessException) {
-            Result.failure(TaskServiceException("Database error while finding all tasks", e))
-        } catch (e: Exception) {
-            Result.failure(TaskServiceException("Unexpected error while finding all tasks", e))
-        }
-    }
-
-    fun findTaskById(id: Long): Result<Task> {
-        return try {
-            val task = taskRepository.findTaskById(id)
-            if (task != null) {
-                Result.success(task)
-            } else {
-                Result.failure(TaskNotFoundException())
+    @Transactional
+    fun delete(id: Long) {
+        execute("delete task by id") {
+            if (!taskRepository.existsById(id)) {
+                throw TaskNotFoundException()
             }
-        } catch (e: DataAccessException) {
-            Result.failure(
-                TaskServiceException(
-                    "Database error while finding task with id: $id", e
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(
-                TaskServiceException(
-                    "Unexpected error while finding task with id: $id", e
-                )
-            )
+            taskRepository.deleteById(id)
         }
     }
 
-    fun update(req: UpdateTaskRequest): Result<Task> {
-        return try {
-            val task = taskRepository.findTaskById(req.id)
-            if (task != null) {
-                val updatedTodo = task.copy(
-                    title = req.title, description = req.description, isCompleted = req.isCompleted
-                )
-                val result = taskRepository.save(updatedTodo)
-                Result.success(result)
-            } else {
-                Result.failure(TaskNotFoundException())
-            }
-        } catch (e: DataAccessException) {
-            Result.failure(
-                TaskServiceException(
-                    "Database error while updating task with id: ${req.id}", e
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(
-                TaskServiceException(
-                    "Unexpected error while updating task with id: ${req.id}", e
-                )
-            )
+    fun findAll(): List<Task> {
+        return execute("find all tasks") {
+            taskRepository.findAll()
         }
     }
 
-    fun updateStatus(req: UpdateTaskStatusRequest): Result<Unit> {
-        return try {
-            val task = taskRepository.findTaskById(req.id)
-            if (task != null) {
-                val updatedTodo = task.copy(
-                    isCompleted = req.isCompleted
+    fun findTaskById(id: Long): Task {
+        return execute("find task by id") {
+            taskRepository.findTaskById(id) ?: throw TaskNotFoundException()
+        }
+    }
+
+    @Transactional
+    fun update(req: UpdateTaskRequest): Task {
+        val (id, title, description, isCompleted) = req
+        return execute("update task") {
+            taskRepository.findTaskById(id)?.let {
+                val updatedTask = it.copy(
+                    title = title ?: it.title,
+                    description = description ?: it.description,
+                    isCompleted = isCompleted ?: it.isCompleted
                 )
-                taskRepository.save(updatedTodo)
-                Result.success(Unit)
-            } else {
-                Result.failure(TaskNotFoundException())
+                taskRepository.save(updatedTask)
+            } ?: throw TaskNotFoundException()
+        }
+    }
+
+    private inline fun <T> execute(operation: String, block: () -> T): T {
+        return runCatching {
+            block()
+        }.getOrElse {
+            logger.error("Failed execute $operation - ${it.message}")
+            when (it) {
+                is TaskNotFoundException -> throw it
+                else -> throw TaskServiceException("Failed execute $operation", it)
             }
-        } catch (e: DataAccessException) {
-            Result.failure(
-                TaskServiceException(
-                    "Database error while updating task with id: ${req.id}", e
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(
-                TaskServiceException(
-                    "Unexpected error while updating task with id: ${req.id}", e
-                )
-            )
         }
     }
 }
