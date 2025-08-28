@@ -45,22 +45,6 @@ data class User(
     override fun getPassword(): String = password
 
     override fun getUsername(): String = username
-
-    override fun isAccountNonExpired(): Boolean {
-        return super.isAccountNonExpired()
-    }
-
-    override fun isAccountNonLocked(): Boolean {
-        return super.isAccountNonLocked()
-    }
-
-    override fun isCredentialsNonExpired(): Boolean {
-        return super.isCredentialsNonExpired()
-    }
-
-    override fun isEnabled(): Boolean {
-        return super.isEnabled()
-    }
 }
 
 data class LoginUserInfo(

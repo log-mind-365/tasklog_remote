@@ -55,6 +55,7 @@ class SecurityConfig(
                     .requestMatchers(
                         "/api/auth/login",
                         "/api/auth/join",
+                        "/api/auth/refresh"
                     )
                     .permitAll()
                     .anyRequest()

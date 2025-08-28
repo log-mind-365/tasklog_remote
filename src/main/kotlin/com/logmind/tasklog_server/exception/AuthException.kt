@@ -10,6 +10,9 @@ enum class AuthErrorCode(
     EXPIRED_TOKEN("AUTH_003", "Expired token"),
     TOKEN_REQUIRED("AUTH_004", "Token required"),
     ALREADY_EMAIL_REGISTERED("AUTH_005", "Already registered email"),
+    INVALID_REFRESH_TOKEN("AUTH_006", "Invalid refresh token"),
+    REFRESH_TOKEN_REVOKED("AUTH_007", "Refresh token has been revoked"),
+    REFRESH_TOKEN_EXPIRED("AUTH_008", "Refresh token has expired"),
     SERVICE_ERROR("AUTH_999", "An error occurred in the authentication service", 500)
 }
 
@@ -50,3 +53,24 @@ class AuthServiceException(
     message: String? = null,
     cause: Throwable? = null
 ) : AuthException(AuthErrorCode.SERVICE_ERROR, message, cause)
+
+class RefreshTokenException(
+    errorCode: AuthErrorCode,
+    message: String? = null,
+    cause: Throwable? = null
+) : AuthException(errorCode, message, cause)
+
+class InvalidRefreshTokenException(
+    message: String? = null,
+    cause: Throwable? = null
+) : RefreshTokenException(AuthErrorCode.INVALID_REFRESH_TOKEN, message, cause)
+
+class RefreshTokenRevokedException(
+    message: String? = null,
+    cause: Throwable? = null
+) : RefreshTokenException(AuthErrorCode.REFRESH_TOKEN_REVOKED, message, cause)
+
+class RefreshTokenExpiredException(
+    message: String? = null,
+    cause: Throwable? = null
+) : RefreshTokenException(AuthErrorCode.REFRESH_TOKEN_EXPIRED, message, cause)

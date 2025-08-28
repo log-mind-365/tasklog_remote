@@ -29,19 +29,6 @@ class JwtTokenProvider(
             .compact()
     }
 
-    fun generateRefreshToken(authentication: Authentication): String {
-        val userPrincipal = authentication.principal as UserDetails
-        val expiryDate = Date(Date().time + jwtProperties.refreshTokenExpiration)
-
-        return Jwts.builder()
-            .setSubject(userPrincipal.username)
-            .setIssuedAt(Date())
-            .setExpiration(expiryDate)
-            .setIssuer(jwtProperties.issuer)
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-            .compact()
-    }
-
     fun getUsernameFromToken(token: String): String {
         val claims = Jwts.parserBuilder()
             .setSigningKey(getSigningKey())

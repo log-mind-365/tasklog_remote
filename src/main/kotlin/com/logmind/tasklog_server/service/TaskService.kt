@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class TaskService(private val taskRepository: TaskRepository) {
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
+    @Transactional
     fun save(req: AddTaskRequest): Task {
         return execute("save task") {
             val newTask = Task(title = req.title, description = req.description)
@@ -31,12 +32,14 @@ class TaskService(private val taskRepository: TaskRepository) {
         }
     }
 
+    @Transactional(readOnly = true)
     fun findAll(): List<Task> {
         return execute("find all tasks") {
             taskRepository.findAll()
         }
     }
 
+    @Transactional(readOnly = true)
     fun findTaskById(id: Long): Task {
         return execute("find task by id") {
             taskRepository.findTaskById(id) ?: throw TaskNotFoundException()
