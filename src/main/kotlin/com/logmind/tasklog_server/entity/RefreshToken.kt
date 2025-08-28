@@ -10,18 +10,18 @@ data class RefreshToken(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(name = "token", unique = true, nullable = false)
+    @Column(unique = true, nullable = false)
     val token: String,
 
-    @Column(name = "user_email", nullable = false)
+    @Column(nullable = false)
     val userEmail: String,
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(nullable = false)
     val expiresAt: LocalDateTime,
 
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(name = "revoked", nullable = false)
+    @Column(nullable = false)
     val revoked: Boolean = false
 )
