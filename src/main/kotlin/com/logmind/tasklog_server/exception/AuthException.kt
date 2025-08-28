@@ -54,7 +54,7 @@ class AuthServiceException(
     cause: Throwable? = null
 ) : AuthException(AuthErrorCode.SERVICE_ERROR, message, cause)
 
-class RefreshTokenException(
+open class RefreshTokenException(
     errorCode: AuthErrorCode,
     message: String? = null,
     cause: Throwable? = null
